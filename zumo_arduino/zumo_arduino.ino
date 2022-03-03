@@ -13,7 +13,7 @@ Zumo32U4LineSensors lineSensors;
 #define CALIBRATE_LINE_FOLLOWER 246
 #define TOGGLE_LINE_FOLLOWER 247
 
-const uint16_t maxSpeed = 300;
+const uint16_t maxSpeed = 200;
 int16_t lastError = 0;
 bool following = false;
 bool agm_detected = false;
@@ -66,7 +66,7 @@ void drive()
   if (lineSensorValues[0] > 50 & lineSensorValues[4] > 50) {
     // above ground marker detected
     if (~agm_detected) {
-      buzzer.playFrequency(800, 200, 15);
+      buzzer.playFrequency(800, 200, 8);
       agm_detected = true;
     }
   }

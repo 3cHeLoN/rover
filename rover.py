@@ -184,32 +184,31 @@ class DataRecorder(Thread):
 
     buffer: StringIO
 
-    def __init__(self, ip_connection: IPConnection, data_writer: DataWriter = None, callback: Callable = None):
+    def __init__(self, ip_connection: IPConnection, filename: str = None, callback: Callable = None):
         super().__init__()
         self.ip_connection = ip_connection
         self.stopped = False
-        self.writer = data_writer
-        self.writer.start()
-        self.buffer = StringIO()
-        self.buffer_size = 4096
+        self.filename = filename
+        self.filehandle = None
         self.callback = callback
+
+    def __del__(self):
+        self.file_handle.close()
 
     def stop(self):
         self.stopped = True
 
     def run(self):
+        if self.filename:
+            self.file_handle = open(self.filename, 'w', encoding='utf-8')
+
         while not self.stopped:
             raw_data = self.ip_connection.recv()
             if self.callback:
                 self.callback(self.unpack(raw_data))
 
-            if self.writer:
-                self.buffer.writelines(raw_data)
-                if self.buffer.tell() > self.buffer_size:
-                    self.buffer.seek(0)
-                    self.writer.set_text_block(self.buffer.readlines())
-                    self.writer.run()
-                    self.buffer.flush()
+            if self.filename:
+                self.file_handle.writelines(raw_data)
 
     def unpack(self, raw_data):
         data_values = [int(x) for x in raw_data.split()]
@@ -233,13 +232,8 @@ def main():
     #conn = SerialConnection('COM4')
     conn.encoding = 'latin-1'
 
-    writer = None
-    if args.outfile:
-        writer = DataWriter(args.outfile)
-        writer.reset()
-
     zumo = ZumoControl(conn)
-    recorder = DataRecorder(ip_conn, data_writer=writer)
+    recorder = DataRecorder(ip_conn, args.outfile)  # , callback=print)
     recorder.start()
 
     running = True
